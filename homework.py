@@ -1,4 +1,5 @@
 import logging
+from mailbox import Message
 import os
 import requests
 import sys
@@ -45,6 +46,21 @@ def send_message(bot, message):
     bot.send_message(TELEGRAM_CHAT_ID, message)
 
 
+def check_message(bot, message):
+    """
+    Проверяет сообщение на корректность 
+    и отправляет в Telegram.
+    """
+    if message:
+        send_message(bot, message)
+        logger.info('Сообщение успешно отправлено.')
+    else:
+        logger.error(
+            'Не удалось отправить сообщение',
+            exc_info=True
+        )
+
+
 def get_api_answer(current_timestamp):
     """Делает запрос к API, возвращает данные Python."""
     timestamp = current_timestamp or int(time.time())
@@ -86,7 +102,8 @@ def parse_status(homework):
     homework_status = homework.get('status')
     if homework_status not in HOMEWORK_STATUSES:
         raise KeyError(
-            f'Неизвестный статус "{homework_status}" в работе "{homework_name}"'
+            (f'Неизвестный статус "{homework_status}" '
+             f'в работе "{homework_name}"')
         )
     verdict = HOMEWORK_STATUSES.get(homework_status)
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
@@ -98,16 +115,20 @@ def check_tokens():
 
 
 def token_empty_error():
+    """
+    Логирует ошибку токена, выбрасывает исключение 
+    с остановкой программы.
+    """
     tokens = {
-            PRACTICUM_TOKEN: 'PRACTICUM_TOKEN',
-            TELEGRAM_TOKEN: 'TELEGRAM_TOKEN',
-            TELEGRAM_CHAT_ID: 'TELEGRAM_CHAT_ID',
-        }
+        PRACTICUM_TOKEN: 'PRACTICUM_TOKEN',
+        TELEGRAM_TOKEN: 'TELEGRAM_TOKEN',
+        TELEGRAM_CHAT_ID: 'TELEGRAM_CHAT_ID',
+    }
     for token in tokens:
         if not token:
-            error = (f'Отсутствует обязательная переменная ')
-            (f'окружения "{token}". ')
-            (f'Программа принудительно остановлена.')
+            error = ('Отсутствует обязательная переменная '
+                     f'окружения "{token}". '
+                     'Программа принудительно остановлена.')
         logger.critical(error, exc_info=True)
         raise exceptions.TokenError(error)
 
@@ -129,7 +150,7 @@ def main():
             message = f'Сбой в работе программы: {error}'
             logger.error(message, exc_info=True)
             if not message == message_status:
-                send_message(bot, message)
+                check_message(bot, message)
                 message_status = message
             time.sleep(RETRY_TIME)
         else:
@@ -140,13 +161,7 @@ def main():
                     except KeyError as error:
                         message = f'Сбой в работе программы: {error}'
                         logger.error(message, exc_info=True)
-                    if message:
-                        send_message(bot, message)
-                        logger.info('Сообщение успешно отправлено.')
-                    else:
-                        logger.error(
-                            'Не удалось отправить сообщение', exc_info=True
-                        )
+                    check_message(bot, message)
             else:
                 logger.debug('Обновлений нет')
 
