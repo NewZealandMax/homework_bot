@@ -47,8 +47,8 @@ def send_message(bot, message):
 
 def check_message(bot, message):
     """
-    Проверяет сообщение на корректность
-    и отправляет в Telegram.
+    Проверяет сообщение на корректность.
+    Отправляет в Telegram.
     """
     if message:
         send_message(bot, message)
@@ -114,10 +114,7 @@ def check_tokens():
 
 
 def token_empty_error():
-    """
-    Логирует ошибку токена, выбрасывает исключение
-    с остановкой программы.
-    """
+    """Логирует ошибку токена, выбрасывает исключение."""
     tokens = {
         PRACTICUM_TOKEN: 'PRACTICUM_TOKEN',
         TELEGRAM_TOKEN: 'TELEGRAM_TOKEN',
