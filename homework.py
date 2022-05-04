@@ -1,5 +1,4 @@
 import logging
-from mailbox import Message
 import os
 import requests
 import sys
@@ -48,7 +47,7 @@ def send_message(bot, message):
 
 def check_message(bot, message):
     """
-    Проверяет сообщение на корректность 
+    Проверяет сообщение на корректность
     и отправляет в Telegram.
     """
     if message:
@@ -116,7 +115,7 @@ def check_tokens():
 
 def token_empty_error():
     """
-    Логирует ошибку токена, выбрасывает исключение 
+    Логирует ошибку токена, выбрасывает исключение
     с остановкой программы.
     """
     tokens = {
