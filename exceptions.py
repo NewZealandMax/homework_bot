@@ -2,18 +2,6 @@ class TokenError(Exception):
     pass
 
 
-class PracticumTokenError(TokenError):
-    pass
-
-
-class TelegramTokenError(TokenError):
-    pass
-
-
-class TelegramChatIDError(TokenError):
-    pass
-
-
 class NotDictError(TypeError):
     pass
 

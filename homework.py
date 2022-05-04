@@ -56,7 +56,10 @@ def get_api_answer(current_timestamp):
 
 
 def check_response(response):
-    """Проверяет ответ API на корректность. Если верно, возвращает список домашних работ."""
+    """
+    Проверяет ответ API на корректность.
+    Если верно, возвращает список домашних работ.
+    """
     key = 'homeworks'
     if not isinstance(response, dict):
         raise exceptions.NotDictError('Ответ API не является словарём.')
@@ -64,7 +67,9 @@ def check_response(response):
         raise KeyError(f'Ключ "{key}" не найден.')
     homeworks = response.get('homeworks')
     if not isinstance(homeworks, list):
-        raise exceptions.NotListError(f'Значение ключа "{key}" не является списком.')
+        raise exceptions.NotListError(
+            f'Значение ключа "{key}" не является списком.'
+        )
     return homeworks
 
 
@@ -80,7 +85,9 @@ def parse_status(homework):
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
     if homework_status not in HOMEWORK_STATUSES:
-        raise KeyError(f'Неизвестный статус "{homework_status}" в работе "{homework_name}"')
+        raise KeyError(
+            f'Неизвестный статус "{homework_status}" в работе "{homework_name}"'
+        )
     verdict = HOMEWORK_STATUSES.get(homework_status)
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
@@ -90,24 +97,25 @@ def check_tokens():
     return bool(PRACTICUM_TOKEN and TELEGRAM_TOKEN and TELEGRAM_CHAT_ID)
 
 
+def token_empty_error():
+    tokens = {
+            PRACTICUM_TOKEN: 'PRACTICUM_TOKEN',
+            TELEGRAM_TOKEN: 'TELEGRAM_TOKEN',
+            TELEGRAM_CHAT_ID: 'TELEGRAM_CHAT_ID',
+        }
+    for token in tokens:
+        if not token:
+            error = (f'Отсутствует обязательная переменная ')
+            (f'окружения "{token}". ')
+            (f'Программа принудительно остановлена.')
+        logger.critical(error, exc_info=True)
+        raise exceptions.TokenError(error)
+
+
 def main():
     """Основная логика работы бота."""
     if not check_tokens():
-        if not PRACTICUM_TOKEN:
-            error = ('Отсутствует обязательная переменная окружения \'PRACTICUM_TOKEN\'. ')
-            ('Программа принудительно остановлена')
-            logger.critical(error, exc_info=True)
-            raise exceptions.PracticumTokenError(error)
-        elif not TELEGRAM_TOKEN:
-            error = ('Отсутствует обязательная переменная окружения \'TELEGRAM_TOKEN\'. ')
-            ('Программа принудительно остановлена')
-            logger.critical(error, exc_info=True)
-            raise exceptions.TelegramTokenError(error)
-        elif not TELEGRAM_CHAT_ID:
-            error = ('Отсутствует обязательная переменная окружения \'TELEGRAM_CHAT_ID\'. ')
-            ('Программа принудительно остановлена')
-            logger.critical(error, exc_info=True)
-            raise exceptions.TelegramChatIDError(error)
+        token_empty_error()
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
     message_status = ''
@@ -136,7 +144,9 @@ def main():
                         send_message(bot, message)
                         logger.info('Сообщение успешно отправлено.')
                     else:
-                        logger.error('Не удалось отправить сообщение', exc_info=True)
+                        logger.error(
+                            'Не удалось отправить сообщение', exc_info=True
+                        )
             else:
                 logger.debug('Обновлений нет')
 
