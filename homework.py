@@ -1,13 +1,15 @@
+import json
 import logging
 import os
-import requests
 import sys
-import telegram
 import time
+from http import HTTPStatus
+
+import requests
+import telegram
+from dotenv import load_dotenv
 
 import exceptions
-
-from dotenv import load_dotenv
 
 
 load_dotenv()
@@ -42,32 +44,28 @@ logger.addHandler(handler)
 
 def send_message(bot, message):
     """Отправлет сообщение в Telegram чат."""
-    bot.send_message(TELEGRAM_CHAT_ID, message)
-
-
-def check_message(bot, message):
-    """
-    Проверяет сообщение на корректность.
-    Отправляет в Telegram.
-    """
-    if message:
-        send_message(bot, message)
+    try:
+        bot.send_message(TELEGRAM_CHAT_ID, message)
         logger.info('Сообщение успешно отправлено.')
-    else:
-        logger.error(
-            'Не удалось отправить сообщение',
-            exc_info=True
-        )
+    except telegram.TelegramError as error:
+        logger.error(error, exc_info=True)
 
 
 def get_api_answer(current_timestamp):
     """Делает запрос к API, возвращает данные Python."""
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
-    response = requests.get(ENDPOINT, headers=HEADERS, params=params)
-    if not response.status_code == 200:
+    try:
+        response = requests.get(ENDPOINT, headers=HEADERS, params=params)
+    except requests.ConnectionError as error:
+        logger.error(error, exc_info=True)
+    if not response.status_code == HTTPStatus.OK:
         raise exceptions.Response200Error('Запрос не вернул код 200.')
-    return response.json()
+    try:
+        response = response.json()
+    except json.JSONDecodeError as error:
+        logger.error(error, exc_info=True)
+    return response
 
 
 def check_response(response):
@@ -80,7 +78,7 @@ def check_response(response):
         raise exceptions.NotDictError('Ответ API не является словарём.')
     if key not in response:
         raise KeyError(f'Ключ "{key}" не найден.')
-    homeworks = response.get('homeworks')
+    homeworks = response.get(key)
     if not isinstance(homeworks, list):
         raise exceptions.NotListError(
             f'Значение ключа "{key}" не является списком.'
@@ -141,12 +139,11 @@ def main():
             response = get_api_answer(current_timestamp)
             homeworks = check_response(response)
             current_timestamp = int(time.time())
-            time.sleep(RETRY_TIME)
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logger.error(message, exc_info=True)
             if not message == message_status:
-                check_message(bot, message)
+                send_message(bot, message)
                 message_status = message
             time.sleep(RETRY_TIME)
         else:
@@ -157,9 +154,10 @@ def main():
                     except KeyError as error:
                         message = f'Сбой в работе программы: {error}'
                         logger.error(message, exc_info=True)
-                    check_message(bot, message)
+                    send_message(bot, message)
             else:
                 logger.debug('Обновлений нет')
+            time.sleep(RETRY_TIME)
 
 
 if __name__ == '__main__':
