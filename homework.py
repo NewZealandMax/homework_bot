@@ -59,12 +59,14 @@ def get_api_answer(current_timestamp):
         response = requests.get(ENDPOINT, headers=HEADERS, params=params)
     except requests.ConnectionError as error:
         logger.error(error, exc_info=True)
+        raise error
     if not response.status_code == HTTPStatus.OK:
         raise exceptions.Response200Error('Запрос не вернул код 200.')
     try:
         response = response.json()
     except json.JSONDecodeError as error:
         logger.error(error, exc_info=True)
+        raise error
     return response
 
 
